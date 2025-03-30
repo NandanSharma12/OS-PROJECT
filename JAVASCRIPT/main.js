@@ -49,3 +49,75 @@ const priorityModal = new bootstrap.Modal(document.getElementById('priorityModal
 const priorityProcessName = document.getElementById('priority-process-name');
 const priorityProcessPid = document.getElementById('priority-process-pid');
 const applyPriorityBtn = document.getElementById('apply-priority');
+const cpuChart = new Chart(
+    document.getElementById('cpu-chart'),
+    {
+        type: 'line',
+        data: {
+            labels: Array(60).fill(''),
+            datasets: [{
+                label: 'CPU Usage',
+                data: [],
+                borderColor: '#3498db',
+                backgroundColor: 'rgba(52, 152, 219, 0.1)',
+                borderWidth: 2,
+                tension: 0.1,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    grid: {
+                        color: 'rgba(0, 0, 0, 0.1)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                },
+                x: {
+                    display: false
+                }
+            }
+        }
+    }
+);
+const memChart = new Chart(
+    document.getElementById('mem-chart'),
+    {
+        type: 'doughnut',
+        data: {
+            labels: ['Used', 'Free', 'Cached'],
+            datasets: [{
+                data: [0, 0, 0],
+                backgroundColor: [
+                    '#e74c3c',
+                    '#2ecc71',
+                    '#3498db'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            },
+            cutout: '70%'
+        }
+    }
+);
