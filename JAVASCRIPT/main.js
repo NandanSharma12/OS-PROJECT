@@ -121,3 +121,73 @@ const memChart = new Chart(
         }
     }
 );
+const processChart = new Chart(
+    document.getElementById('process-chart'),
+    {
+        type: 'doughnut',
+        data: {
+            labels: ['Running', 'Sleeping', 'Other'],
+            datasets: [{
+                data: [0, 0, 0],
+                backgroundColor: [
+                    '#2ecc71',
+                    '#3498db',
+                    '#f39c12'
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            },
+            cutout: '70%'
+        }
+    }
+);
+function initDashboard() {
+    hostnameEl.textContent = window.location.hostname || 'localhost';
+    osInfoEl.textContent = `${navigator.platform} (${navigator.userAgent.split(') ')[0].split('(')[1]})`;
+    fetchSystemData();
+        setupEventListeners();
+    setInterval(fetchSystemData, 2000);
+}
+function fetchSystemData() {
+    const now = new Date();
+    lastUpdatedEl.textContent = now.toLocaleTimeString();    
+    systemData.cpu.cores = navigator.hardwareConcurrency / 2 || 4;
+    systemData.cpu.threads = navigator.hardwareConcurrency || 8;
+    systemData.cpu.frequency = (2 + Math.random()).toFixed(2);
+    systemData.cpu.percent = Math.min(100, Math.max(0, systemData.cpu.percent + (Math.random() * 10 - 5)));
+    systemData.cpu.history.push(systemData.cpu.percent);
+    if (systemData.cpu.history.length > 60) systemData.cpu.history.shift();
+    
+    systemData.memory.total = 16;
+    systemData.memory.used = Math.min(systemData.memory.total, Math.max(0, systemData.memory.used + (Math.random() * 2 - 1)));
+    systemData.memory.free = systemData.memory.total - systemData.memory.used;
+    systemData.memory.percent = (systemData.memory.used / systemData.memory.total * 100).toFixed(1);
+    systemData.memory.history.push(parseFloat(systemData.memory.percent));
+    if (systemData.memory.history.length > 60) systemData.memory.history.shift();
+    const processStates = ['Running', 'Sleeping', 'Zombie', 'Stopped'];
+    systemData.processes.list = Array.from({length: 50}, (_, i) => {
+        const state = processStates[Math.floor(Math.random() * processStates.length)];
+        return {
+            pid: 1000 + i,
+            name: ['chrome', 'node', 'python', 'mysqld', 'bash', 'systemd', 'docker', 'vscode'][Math.floor(Math.random() * 8)],
+            user: ['root', 'user', 'system', 'mysql', 'docker'][Math.floor(Math.random() * 5)],
+            cpu: (Math.random() * 30).toFixed(1),
+            memory: (Math.random() * 5).toFixed(1),
+            status: state.charAt(0)
+        };
+    });
+    systemData.processes.running = systemData.processes.list.filter(p => p.status === 'R').length;
+    systemData.processes.sleeping = systemData.processes.list.filter(p => p.status === 'S').length;
+    systemData.processes.other = systemData.processes.list.length - systemData.processes.running - systemData.processes.sleeping;
+    systemData.processes.total = systemData.processes.list.length;
+    checkForAlerts();UI
+    updateUI();
+}
