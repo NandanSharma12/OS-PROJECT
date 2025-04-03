@@ -191,3 +191,119 @@ function fetchSystemData() {
     checkForAlerts();UI
     updateUI();
 }
+function updateUI() {
+    cpuPercentEl.textContent = `${systemData.cpu.percent.toFixed(1)}%`;
+    cpuCoresEl.textContent = systemData.cpu.cores;
+    cpuThreadsEl.textContent = systemData.cpu.threads;
+    cpuFreqEl.textContent = `${systemData.cpu.frequency} GHz`;
+    memPercentEl.textContent = `${systemData.memory.percent}%`;
+    memTotalEl.textContent = `${systemData.memory.total} GB`;
+    memUsedEl.textContent = `${systemData.memory.used.toFixed(1)} GB`;
+    memFreeEl.textContent = `${systemData.memory.free.toFixed(1)} GB`;
+    processCountEl.textContent = systemData.processes.total;
+    runningCountEl.textContent = systemData.processes.running;
+    sleepingCountEl.textContent = systemData.processes.sleeping;
+    otherCountEl.textContent = systemData.processes.other;
+    updateCharts();
+    updateProcessTable();
+    updateAlerts();
+}
+function updateCharts() {
+    cpuChart.data.datasets[0].data = systemData.cpu.history;
+    cpuChart.update();
+    memChart.data.datasets[0].data = [
+        systemData.memory.used,
+        systemData.memory.free,
+        systemData.memory.total * 0.2  
+    ];
+    memChart.update();
+    processChart.data.datasets[0].data = [
+        systemData.processes.running,
+        systemData.processes.sleeping,
+        systemData.processes.other
+    ];
+    processChart.update();
+}
+function updateProcessTable() {
+    processTableBody.innerHTML = '';
+    const sortedProcesses = [...systemData.processes.list];
+    sortedProcesses.sort((a, b) => {
+        if (a[processSortColumn] < b[processSortColumn]) return processSortReverse ? 1 : -1;
+        if (a[processSortColumn] > b[processSortColumn]) return processSortReverse ? -1 : 1;
+        return 0;
+    });
+    sortedProcesses.forEach(process => {
+        const row = document.createElement('tr');
+        row.dataset.pid = process.pid;
+        row.innerHTML = `
+            <td>${process.pid}</td>
+            <td>${process.name}</td>
+            <td>${process.user}</td>
+            <td>${process.cpu}</td>
+            <td>${process.memory} MB</td>
+            <td>${process.status}</td>
+            <td class="process-actions">
+                <button class="btn-priority" data-pid="${process.pid}" title="Set Priority">
+                    <i class="fas fa-sliders-h"></i>
+                </button>
+                <button class="btn-kill" data-pid="${process.pid}" title="Kill Process">
+                    <i class="fas fa-skull"></i>
+                </button>
+            </td>
+        `;
+        processTableBody.appendChild(row);
+    });
+    document.querySelectorAll('.btn-priority').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const pid = e.currentTarget.dataset.pid;
+            showPriorityModal(pid);
+        });
+    });
+    
+    document.querySelectorAll('.btn-kill').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const pid = e.currentTarget.dataset.pid;
+            killProcess(pid);
+        });
+    });
+}
+function updateAlerts() {
+    alertsContainer.innerHTML = '';
+    
+    systemData.alerts.forEach(alert => {
+        const alertEl = document.createElement('div');
+        alertEl.className = `alert-item ${alert.type}`;
+        alertEl.innerHTML = `
+            <div>
+                <strong>${alert.message}</strong>
+                ${alert.details ? `<div class="alert-details">${alert.details}</div>` : ''}
+            </div>
+            <div class="alert-time">${alert.time}</div>
+        `;
+        
+        alertsContainer.appendChild(alertEl);
+    });
+}
+function checkForAlerts() {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString();
+    if (systemData.alerts.length > 20) {
+        systemData.alerts.shift();
+    }
+    if (systemData.cpu.percent > 80) {
+        systemData.alerts.push({
+            type: 'warning',
+            message: 'High CPU Usage',
+            details: `CPU usage is ${systemData.cpu.percent.toFixed(1)}%`,
+            time: timeStr
+        });
+    }
+    if (systemData.memory.percent > 80) {
+        systemData.alerts.push({
+            type: 'warning',
+            message: 'High Memory Usage',
+            details: `Memory usage is ${systemData.memory.percent}%`,
+            time: timeStr
+        });
+    }
+}
