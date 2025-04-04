@@ -307,3 +307,39 @@ function checkForAlerts() {
         });
     }
 }
+function showPriorityModal(pid) {
+    const process = systemData.processes.list.find(p => p.pid == pid);
+    if (process) {
+        priorityProcessName.textContent = process.name;
+        priorityProcessPid.textContent = pid;
+        priorityModal.show();
+    }
+}
+function killProcess(pid) {
+    systemData.processes.list = systemData.processes.list.filter(p => p.pid != pid);
+    const now = new Date();
+    systemData.alerts.push({
+        type: 'success',
+        message: 'Process Terminated',
+        details: `PID: ${pid}`,
+        time: now.toLocaleTimeString()
+    });
+    updateProcessTable();
+    updateAlerts();
+}
+function setupEventListeners() {
+    refreshBtn.addEventListener('click', fetchSystemData);
+    darkModeToggle.addEventListener('change', toggleDarkMode);
+    searchBtn.addEventListener('click', searchProcesses);
+    processSearch.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') searchProcesses();
+    });
+    killBtn.addEventListener('click', () => {
+        const selectedRow = document.querySelector('#process-table tr.selected');
+        if (selectedRow) {
+            const pid = selectedRow.dataset.pid;
+            killProcess(pid);
+        } else {
+            alert('Please select a process first');
+        }
+    });
