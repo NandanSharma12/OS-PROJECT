@@ -343,3 +343,120 @@ function setupEventListeners() {
             alert('Please select a process first');
         }
     });
+    }
+
+// Check for system alerts
+function checkForAlerts() {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString();
+    
+    // Clear old alerts
+    if (systemData.alerts.length > 20) {
+        systemData.alerts.shift();
+    }
+    
+    // CPU alert
+    if (systemData.cpu.percent > 80) {
+        systemData.alerts.push({
+            type: 'warning',
+            message: 'High CPU Usage',
+            details: `CPU usage is ${systemData.cpu.percent.toFixed(1)}%`,
+            time: timeStr
+        });
+    }
+    
+    // Memory alert
+    if (systemData.memory.percent > 80) {
+        systemData.alerts.push({
+            type: 'warning',
+            message: 'High Memory Usage',
+            details: `Memory usage is ${systemData.memory.percent}%`,
+            time: timeStr
+        });
+    }
+}
+
+// Show priority modal for a process
+function showPriorityModal(pid) {
+    const process = systemData.processes.list.find(p => p.pid == pid);
+    if (process) {
+        priorityProcessName.textContent = process.name;
+        priorityProcessPid.textContent = pid;
+        priorityModal.show();
+    }
+}
+
+// Kill a process
+function killProcess(pid) {
+    // In a real app, this would call a backend API
+    systemData.processes.list = systemData.processes.list.filter(p => p.pid != pid);
+    
+    const now = new Date();
+    systemData.alerts.push({
+        type: 'success',
+        message: 'Process Terminated',
+        details: `PID: ${pid}`,
+        time: now.toLocaleTimeString()
+    });
+    
+    updateProcessTable();
+    updateAlerts();
+}
+
+// Set up event listeners
+function setupEventListeners() {
+    // Refresh button
+    refreshBtn.addEventListener('click', fetchSystemData);
+    
+    // Dark mode toggle
+    darkModeToggle.addEventListener('change', toggleDarkMode);
+    
+    // Process search
+    searchBtn.addEventListener('click', searchProcesses);
+    processSearch.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') searchProcesses();
+    });
+    
+    // Kill process button
+    killBtn.addEventListener('click', () => {
+        const selectedRow = document.querySelector('#process-table tr.selected');
+        if (selectedRow) {
+            const pid = selectedRow.dataset.pid;
+            killProcess(pid);
+        } else {
+            alert('Please select a process first');
+        }
+    });
+    
+    // Clear alerts
+    clearAlertsBtn.addEventListener('click', () => {
+        systemData.alerts = [];
+        updateAlerts();
+    });
+    
+    // Apply priority
+    applyPriorityBtn.addEventListener('click', () => {
+        const pid = priorityProcessPid.textContent;
+        const priority = document.querySelector('input[name="priority"]:checked').value;
+        
+        const now = new Date();
+        systemData.alerts.push({
+            type: 'success',
+            message: 'Priority Set',
+            details: `PID: ${pid}, Priority: ${priority}`,
+            time: now.toLocaleTimeString()
+        });
+        
+        priorityModal.hide();
+        updateAlerts();
+    });
+    
+    // Process table row selection
+    processTableBody.addEventListener('click', (e) => {
+        const row = e.target.closest('tr');
+        if (row) {
+            document.querySelectorAll('#process-table tr').forEach(r => r.classList.remove('selected'));
+            row.classList.add('selected');
+        }
+    });
+
