@@ -459,4 +459,86 @@ function setupEventListeners() {
             row.classList.add('selected');
         }
     });
+     
+    // Process table sorting
+    document.querySelectorAll('#process-table th[data-sort]').forEach(th => {
+        th.addEventListener('click', () => {
+            const column = th.dataset.sort;
+            if (processSortColumn === column) {
+                processSortReverse = !processSortReverse;
+            } else {
+                processSortColumn = column;
+                processSortReverse = true;
+            }
+            
+            // Update sort indicators
+            document.querySelectorAll('#process-table th i').forEach(icon => {
+                icon.className = 'fas fa-sort';
+            });
+            
+            const icon = th.querySelector('i');
+            icon.className = processSortReverse ? 'fas fa-sort-down' : 'fas fa-sort-up';
+            
+            updateProcessTable();
+        });
+    });
+}
+
+// Search processes
+function searchProcesses() {
+    const query = processSearch.value.toLowerCase();
+    if (!query) return;
+    
+    const rows = document.querySelectorAll('#process-table tbody tr');
+    let found = false;
+    
+    rows.forEach(row => {
+        const pid = row.cells[0].textContent;
+        const name = row.cells[1].textContent.toLowerCase();
+        const user = row.cells[2].textContent.toLowerCase();
+        
+        if (pid.includes(query) || name.includes(query) || user.includes(query)) {
+            row.scrollIntoView({behavior: 'smooth', block: 'center'});
+            row.classList.add('highlight');
+            setTimeout(() => row.classList.remove('highlight'), 2000);
+            found = true;
+        }
+    });
+    
+    if (!found) {
+        alert('No matching processes found');
+    }
+}
+
+// Toggle dark mode
+function toggleDarkMode() {
+    const isDark = darkModeToggle.checked;
+    document.body.setAttribute('data-theme', isDark ? 'dark' : 'light');
+    localStorage.setItem('darkMode', isDark);
+    
+    // Update chart colors for dark mode
+    updateChartThemes(isDark);
+}
+
+// Update chart themes
+function updateChartThemes(isDark) {
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)';
+    
+    // CPU Chart
+    cpuChart.options.scales.y.grid.color = gridColor;
+    cpuChart.update();
+    
+    // Memory Chart
+    memChart.update();
+    
+    // Process Chart
+    processChart.update();
+}
+
+// Initialize sort variables
+let processSortColumn = 'cpu';
+let processSortReverse = true;
+
+// Start the dashboard when DOM is loaded
+document.addEventListener('DOMContentLoaded', initDashboard);
 
